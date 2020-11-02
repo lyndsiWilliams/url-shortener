@@ -1,4 +1,5 @@
 # MyMinnow - URL Shortener app
 
-## Deployed at:
-- https://mymin.now.sh/
+## Deployment:
+- Front end: https://mymin.now.sh/
+- Back end: https://myminnow.herokuapp.com/

@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');   // logger
 const helmet = require('helmet');   // security
+const yup = require('yup');         // validation
+const { nanoid } = require('nanoid');   // unique string ID generator
 
 // Create Express server and port
 const app = express();
@@ -30,9 +32,52 @@ app.get('/', (req, res) => {
 //   //TODO: Redirect to URL
 // });
 
-// app.post('/url', (req, res) => {
-//   //TODO: Create a short URL
-// });
+const schema = yup.object().shape({
+  // Slug will have no whitespace and will only allow alphanumeric characters and -
+  slug: yup.string().trim().matches(/[\w\-]/i),
+  url: yup.string().trim().url().required()
+})
+
+app.post('/url', async (req, res, next) => {
+  // Creates a short URL
+  let { slug, url } = req.body;
+
+  try {
+    await schema.validate({
+      slug,
+      url,
+    });
+
+    if (!slug){
+      slug = nanoid(5);
+    };
+
+    slug = slug.toLowerCase();
+
+    res.json({
+      slug,
+      url,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+`Error handler:
+  - if there's an error.status, set it to the res.status
+    - Otherwise, set the status to 500
+  - respond with the error's message and stack trace`
+app.use((error, req, res, next) => {
+  if(error.status) {
+    res.status(error.status);
+  } else {
+    res.status(500);
+  }
+  res.json({
+    message: error.message,
+    stack: process.env.NODE_ENV === 'production' ? '🥞' : error.stack,
+  })
+})
 
 app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}`);

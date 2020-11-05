@@ -10,6 +10,9 @@ const { nanoid } = require('nanoid');   // unique string ID generator
 const app = express();
 const port = process.env.PORT || 1337;
 
+// DB Model
+const URLS = require('./urls-model.js');
+
 // Middleware
 app.use(helmet());
 app.use(morgan('tiny'));
@@ -19,18 +22,27 @@ app.use(express.static('../url-shortener/public')) // Replace this later with Re
 
 // Routes
 app.get('/', (req, res) => {
+  // "Server is awake" endpoint
   res.json({
     message: 'mymin.now.sh - Turn your big fish URL into a tiny minnow!'
   });
 });
 
-// app.get('/url/:id', (req, res) => {
-//   //TODO: Retrieve info about short URL
-// });
+app.get('/:id', async (req, res) => {
+  // Redirect to URL
+  const { id: slug } = req.params;
 
-// app.get('/:id', (req, res) => {
-//   //TODO: Redirect to URL
-// });
+  try {
+    const url = await URLS.findBySlug(slug);
+    console.log("URL: ", url)  
+
+    if (url) {
+      res.redirect(url.url);
+    }
+  } catch (error) {
+    res.json({ message: "Redirect not successful" })
+  }
+});
 
 const schema = yup.object().shape({
   // Slug will have no whitespace and will only allow alphanumeric characters and -
@@ -54,12 +66,15 @@ app.post('/url', async (req, res, next) => {
 
     slug = slug.toLowerCase();
 
-    res.json({
-      slug,
+    const newUrl = {
       url,
-    });
+      slug,
+    };
+    const created = await URLS.insert(newUrl);
+    const newSlug = newUrl.slug;
+    res.json({created, newSlug})
   } catch (error) {
-    next(error);
+    res.status(500).json({ message: 'Slug in use 🐌', error: error })
   }
 });
 

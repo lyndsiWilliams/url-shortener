@@ -1,5 +1,5 @@
 // Package imports
-const knex = require('knex');
+const knex = require('knex')('production');
 const knexfile = require('../knexfile.js');
 // Dynamic environment
 const environment = process.env.NODE_ENV || 'development';

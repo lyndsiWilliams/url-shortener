@@ -1,37 +1,44 @@
 // Package imports
 import React, { useState } from 'react';
-import axios from 'axios';
+import { connect } from 'react-redux';
+// Redux action
+import { postURL } from './redux/actions';
 // Styling
 import './App.css';
 
-function App() {
+const App = props => {
+  console.log("PROPS: ", props)
+
   const [form, setForm] = useState({
     url: '',
     slug: '',
     created: null,
   });
 
-  const createURL = () => {
+  async function createURL() {
     console.log(form.url, form.slug);
-    axios
-      .post('localhost:1337/url', form)
-      .then(res => {
-        console.log("POST REQUEST", res);
-        setForm({ created: res })
+    const response = await fetch('http://localhost:1337/url', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: form.url,
+        slug: form.slug,
       })
-      .catch(err => console.log(err))
+    });
+    setForm({ created: await response.json() });
   };
 
   const handleSubmit = event => {
     event.preventDefault();
     // createURL();
-    axios
-      .post('localhost:1337/url', form)
-      .then(res => {
-        console.log("POST REQUEST", res);
-        setForm({ created: res })
-      })
-      .catch(err => console.log(err))
+    props.postURL(form);
+    setForm({
+      url: '',
+      slug: '',
+      created: null,
+    })
   };
 
   const handleChanges = event => {
@@ -45,6 +52,7 @@ function App() {
       </header>
       <main>
         <form onSubmit={handleSubmit}>
+          <label htmlFor="url">URL</label>
           <input
             type="text"
             name="url"
@@ -53,6 +61,7 @@ function App() {
             onChange={handleChanges}
             value={form.url}
           />
+          <label htmlFor="slug">Slug</label>
           <input
             type="text"
             name="slug"
@@ -71,4 +80,13 @@ function App() {
   );
 };
 
-export default App;
+const mapStateToProps = state => ({
+  url: state.url,
+  error: state.error,
+  isFetching: state.isFetching,
+});
+
+export default connect (
+  mapStateToProps,
+  { postURL }
+)(App);
